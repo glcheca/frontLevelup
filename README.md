@@ -33,19 +33,31 @@ así que no hay CORS en desarrollo.
 | `npm run dev`     | Servidor de desarrollo                 |
 | `npm run build`   | Chequeo de tipos + build de producción |
 | `npm run preview` | Sirve el build                         |
+| `npm test`        | Tests unitarios con Vitest             |
+| `npm run lint`    | ESLint                                 |
+| `npm run format`  | Prettier                               |
 
 ## Estructura
 
 ```
 src/
-├─ api/         cliente Axios, token en memoria, endpoints
-├─ layouts/     AppLayout (sidebar) y AuthLayout
-├─ pages/       login, registro, dashboard y placeholders
-├─ router/      rutas y guard de sesión
-├─ stores/      auth (usuario + sesión)
-├─ types/       modelos compartidos
-└─ style.css    Tailwind + componentes base
+├─ api/          cliente Axios, token en memoria, endpoints y claves de caché
+├─ components/   ui (modal, empty state, skeleton), courses, events, tasks
+├─ composables/  tema, toasts
+├─ layouts/      AppLayout (sidebar) y AuthLayout
+├─ pages/        login, registro, dashboard, cursos, detalle, calendario, eventos, tareas
+├─ router/       rutas y guard de sesión
+├─ stores/       auth (usuario + sesión)
+├─ types/        modelos compartidos
+├─ utils/        fechas (semana/mes, TZ, etiquetas)
+└─ style.css     Tailwind + componentes base
 ```
+
+## Módulos implementados
+
+- **Etapa 0:** auth completa, layout responsive, tema claro/oscuro/sistema, CI.
+- **Etapa 1:** cursos (CRUD, archivar, color), horario por bloques, eventos (rango, todo el día),
+  tareas (subtareas, prioridad, vencimiento, completar optimista), calendario semana/mes y dashboard.
 
 ## Sesión
 
@@ -54,9 +66,17 @@ src/
 - Al recargar, el guard llama a `/auth/refresh` una sola vez.
 - Ante un `401`, Axios refresca y reintenta la petición original.
 
-## Pendiente (Etapa 0)
+## Caché de servidor
+
+TanStack Query guarda cursos, horario, eventos y tareas. Al mutar un curso se invalidan las cuatro
+claves, de modo que un cambio de color o nombre se refleja en calendario, tareas y dashboard sin
+recargar la página.
+
+## Pendiente
 
 - [x] Toggle de tema claro/oscuro/sistema
 - [x] CI (lint + format + test + build) en verde
-- [x] Tests con Vitest (`npm test`, 12 tests)
+- [x] Tests con Vitest (`npm test`, 17 tests)
 - [x] Validado contra PostgreSQL real vía proxy `/api`
+- [ ] Arrastrar para seleccionar rangos en el calendario (Etapa 4)
+- [ ] Apuntes y calificaciones (Etapa 2)

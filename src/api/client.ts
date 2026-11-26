@@ -68,7 +68,10 @@ api.interceptors.response.use(
   },
 )
 
-export function errorMessage(error: unknown): string {
+export function errorMessage(
+  error: unknown,
+  fallback = 'Ha ocurrido un error inesperado.',
+): string {
   if (error instanceof AxiosError) {
     const problem = error.response?.data as ProblemDetail | undefined
     if (problem?.errors?.length) {
@@ -81,5 +84,5 @@ export function errorMessage(error: unknown): string {
       return 'No se pudo conectar con el servidor.'
     }
   }
-  return 'Ha ocurrido un error inesperado.'
+  return fallback
 }

@@ -29,20 +29,27 @@ const router = createRouter({
         {
           path: 'cursos',
           name: 'courses',
-          component: () => import('@/pages/PlaceholderPage.vue'),
-          props: { title: 'Cursos' },
+          component: () => import('@/pages/CoursesPage.vue'),
+        },
+        {
+          path: 'cursos/:id',
+          name: 'course-detail',
+          component: () => import('@/pages/CourseDetailPage.vue'),
         },
         {
           path: 'calendario',
           name: 'calendar',
-          component: () => import('@/pages/PlaceholderPage.vue'),
-          props: { title: 'Calendario' },
+          component: () => import('@/pages/CalendarPage.vue'),
+        },
+        {
+          path: 'eventos',
+          name: 'events',
+          component: () => import('@/pages/EventsPage.vue'),
         },
         {
           path: 'tareas',
           name: 'tasks',
-          component: () => import('@/pages/PlaceholderPage.vue'),
-          props: { title: 'Tareas' },
+          component: () => import('@/pages/TasksPage.vue'),
         },
         {
           path: 'apuntes',

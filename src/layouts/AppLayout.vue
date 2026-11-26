@@ -4,6 +4,7 @@ import { RouterLink, RouterView, useRouter } from 'vue-router'
 import {
   Bell,
   BookOpen,
+  CalendarClock,
   CalendarDays,
   CheckSquare,
   GraduationCap,
@@ -20,6 +21,7 @@ import {
 } from 'lucide-vue-next'
 import { useTheme, type Theme } from '@/composables/useTheme'
 import { useAuthStore } from '@/stores/auth'
+import Toaster from '@/components/Toaster.vue'
 
 const auth = useAuthStore()
 const router = useRouter()
@@ -50,6 +52,7 @@ const navigation = [
   { name: 'Hoy', to: { name: 'dashboard' }, icon: LayoutDashboard },
   { name: 'Cursos', to: { name: 'courses' }, icon: BookOpen },
   { name: 'Calendario', to: { name: 'calendar' }, icon: CalendarDays },
+  { name: 'Eventos', to: { name: 'events' }, icon: CalendarClock },
   { name: 'Tareas', to: { name: 'tasks' }, icon: CheckSquare },
   { name: 'Apuntes', to: { name: 'notes' }, icon: NotebookPen },
   { name: 'Notas', to: { name: 'grades' }, icon: GraduationCap },
@@ -172,5 +175,7 @@ async function handleLogout() {
         <RouterView />
       </main>
     </div>
+
+    <Toaster />
   </div>
 </template>
