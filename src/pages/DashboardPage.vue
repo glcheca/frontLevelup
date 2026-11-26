@@ -6,9 +6,11 @@ import { useAuthStore } from '@/stores/auth'
 const auth = useAuthStore()
 
 const today = computed(() => {
-  const formatted = new Intl.DateTimeFormat('es', { weekday: 'long', day: 'numeric', month: 'long' }).format(
-    new Date(),
-  )
+  const formatted = new Intl.DateTimeFormat('es', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+  }).format(new Date())
   return formatted.charAt(0).toUpperCase() + formatted.slice(1)
 })
 
@@ -32,12 +34,16 @@ const cards = [
 
     <section class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
       <article v-for="card in cards" :key="card.name" class="card">
-        <div class="grid size-10 place-items-center rounded-lg bg-brand-50 text-brand-600 dark:bg-brand-900/30 dark:text-brand-300">
+        <div
+          class="grid size-10 place-items-center rounded-lg bg-brand-50 text-brand-600 dark:bg-brand-900/30 dark:text-brand-300"
+        >
           <component :is="card.icon" class="size-5" />
         </div>
         <h2 class="mt-4 font-medium">{{ card.name }}</h2>
         <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">{{ card.description }}</p>
-        <span class="mt-3 inline-block rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+        <span
+          class="mt-3 inline-block rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-500 dark:bg-slate-800 dark:text-slate-400"
+        >
           Próximamente
         </span>
       </article>
@@ -46,7 +52,8 @@ const cards = [
     <section class="card border-dashed">
       <h2 class="font-medium">Etapa 0 completada</h2>
       <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
-        Autenticación, layout y base de datos listos. La siguiente etapa añade cursos, horario, eventos y tareas.
+        Autenticación, layout y base de datos listos. La siguiente etapa añade cursos, horario,
+        eventos y tareas.
       </p>
     </section>
   </div>

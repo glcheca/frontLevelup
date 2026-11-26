@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { RouterLink, RouterView, useRouter } from 'vue-router'
 import {
   Bell,
@@ -10,16 +10,41 @@ import {
   LayoutDashboard,
   LogOut,
   Menu,
+  Monitor,
+  Moon,
   NotebookPen,
   Search,
   Settings,
+  Sun,
   X,
 } from 'lucide-vue-next'
+import { useTheme, type Theme } from '@/composables/useTheme'
 import { useAuthStore } from '@/stores/auth'
 
 const auth = useAuthStore()
 const router = useRouter()
 const sidebarOpen = ref(false)
+
+const { theme, resolvedTheme, setTheme } = useTheme()
+
+const themeIcon = computed(() =>
+  theme.value === 'system' ? Monitor : resolvedTheme.value === 'dark' ? Moon : Sun,
+)
+const themeLabel = computed(() =>
+  theme.value === 'system' ? 'sistema' : theme.value === 'dark' ? 'oscuro' : 'claro',
+)
+
+async function cycleTheme() {
+  const next: Theme = theme.value === 'light' ? 'dark' : theme.value === 'dark' ? 'system' : 'light'
+  setTheme(next)
+  if (auth.isAuthenticated) {
+    try {
+      await auth.saveTheme(next)
+    } catch {
+      // La preferencia local ya está aplicada; se reintentará al cambiar de nuevo.
+    }
+  }
+}
 
 const navigation = [
   { name: 'Hoy', to: { name: 'dashboard' }, icon: LayoutDashboard },
@@ -46,10 +71,18 @@ async function handleLogout() {
     >
       <div class="flex h-16 items-center justify-between px-5">
         <RouterLink :to="{ name: 'dashboard' }" class="flex items-center gap-2.5">
-          <div class="grid size-8 place-items-center rounded-lg bg-brand-600 text-sm font-bold text-white">L</div>
+          <div
+            class="grid size-8 place-items-center rounded-lg bg-brand-600 text-sm font-bold text-white"
+          >
+            L
+          </div>
           <span class="font-semibold tracking-tight">LevelUp</span>
         </RouterLink>
-        <button class="btn-ghost size-9 p-0 lg:hidden" aria-label="Cerrar menú" @click="sidebarOpen = false">
+        <button
+          class="btn-ghost size-9 p-0 lg:hidden"
+          aria-label="Cerrar menú"
+          @click="sidebarOpen = false"
+        >
           <X class="size-5" />
         </button>
       </div>
@@ -79,26 +112,55 @@ async function handleLogout() {
       </div>
     </aside>
 
-    <div v-if="sidebarOpen" class="fixed inset-0 z-20 bg-slate-900/40 lg:hidden" @click="sidebarOpen = false" />
+    <div
+      v-if="sidebarOpen"
+      class="fixed inset-0 z-20 bg-slate-900/40 lg:hidden"
+      @click="sidebarOpen = false"
+    />
 
     <!-- Main -->
     <div class="flex min-w-0 flex-1 flex-col">
-      <header class="flex h-16 items-center gap-3 border-b border-slate-200 bg-white px-4 dark:border-slate-800 dark:bg-slate-900 sm:px-6">
-        <button class="btn-ghost size-9 p-0 lg:hidden" aria-label="Abrir menú" @click="sidebarOpen = true">
+      <header
+        class="flex h-16 items-center gap-3 border-b border-slate-200 bg-white px-4 dark:border-slate-800 dark:bg-slate-900 sm:px-6"
+      >
+        <button
+          class="btn-ghost size-9 p-0 lg:hidden"
+          aria-label="Abrir menú"
+          @click="sidebarOpen = true"
+        >
           <Menu class="size-5" />
         </button>
 
         <div class="relative hidden max-w-md flex-1 sm:block">
-          <Search class="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-slate-400" />
-          <input class="input pl-9" type="search" placeholder="Buscar apuntes, eventos, tareas…" disabled />
+          <Search
+            class="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-slate-400"
+          />
+          <input
+            class="input pl-9"
+            type="search"
+            placeholder="Buscar apuntes, eventos, tareas…"
+            disabled
+          />
         </div>
 
         <div class="ml-auto flex items-center gap-2">
+          <button
+            class="btn-ghost size-9 p-0"
+            :aria-label="`Cambiar tema (actual: ${themeLabel})`"
+            :title="`Tema: ${themeLabel}`"
+            @click="cycleTheme"
+          >
+            <component :is="themeIcon" class="size-5" />
+          </button>
           <button class="btn-ghost relative size-9 p-0" aria-label="Notificaciones" disabled>
             <Bell class="size-5" />
           </button>
-          <div class="flex items-center gap-2 rounded-full border border-slate-200 py-1 pr-3 pl-1 dark:border-slate-700">
-            <div class="grid size-7 place-items-center rounded-full bg-brand-100 text-xs font-semibold text-brand-700 dark:bg-brand-900/40 dark:text-brand-300">
+          <div
+            class="flex items-center gap-2 rounded-full border border-slate-200 py-1 pr-3 pl-1 dark:border-slate-700"
+          >
+            <div
+              class="grid size-7 place-items-center rounded-full bg-brand-100 text-xs font-semibold text-brand-700 dark:bg-brand-900/40 dark:text-brand-300"
+            >
               {{ auth.user?.name?.charAt(0).toUpperCase() ?? '?' }}
             </div>
             <span class="hidden text-sm font-medium sm:block">{{ auth.user?.name }}</span>

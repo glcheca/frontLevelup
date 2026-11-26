@@ -2,6 +2,8 @@ import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { authApi } from '@/api/auth'
 import { setAccessToken } from '@/api/token'
+import { userApi } from '@/api/user'
+import { setTheme, type Theme } from '@/composables/useTheme'
 import type { LoginRequest, RegisterRequest, User } from '@/types/models'
 
 export const useAuthStore = defineStore('auth', () => {
@@ -15,6 +17,9 @@ export const useAuthStore = defineStore('auth', () => {
   function applySession(session: { accessToken: string; user: User }) {
     setAccessToken(session.accessToken)
     user.value = session.user
+    if (session.user.theme) {
+      setTheme(session.user.theme)
+    }
   }
 
   async function login(payload: LoginRequest) {
@@ -58,5 +63,20 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  return { user, initialized, loading, error, isAuthenticated, login, register, bootstrap, logout }
+  async function saveTheme(theme: Theme) {
+    user.value = await userApi.updateProfile({ theme })
+  }
+
+  return {
+    user,
+    initialized,
+    loading,
+    error,
+    isAuthenticated,
+    login,
+    register,
+    bootstrap,
+    logout,
+    saveTheme,
+  }
 })

@@ -28,11 +28,11 @@ así que no hay CORS en desarrollo.
 
 ## Scripts
 
-| Comando | Descripción |
-|---|---|
-| `npm run dev` | Servidor de desarrollo |
-| `npm run build` | Chequeo de tipos + build de producción |
-| `npm run preview` | Sirve el build |
+| Comando           | Descripción                            |
+| ----------------- | -------------------------------------- |
+| `npm run dev`     | Servidor de desarrollo                 |
+| `npm run build`   | Chequeo de tipos + build de producción |
+| `npm run preview` | Sirve el build                         |
 
 ## Estructura
 
