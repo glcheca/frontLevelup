@@ -57,6 +57,6 @@ src/
 ## Pendiente (Etapa 0)
 
 - [x] Toggle de tema claro/oscuro/sistema
-- [x] CI (lint + format + build)
-- [ ] Tests con Vitest
+- [x] CI (lint + format + test + build)
+- [x] Tests con Vitest (`npm test`)
 - [ ] Validar el flujo contra PostgreSQL real (hoy se usa H2)
