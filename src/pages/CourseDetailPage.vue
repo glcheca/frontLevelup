@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { useRoute, useRouter } from 'vue-router'
 import { ArrowLeft, CalendarPlus, CheckSquare, Plus } from 'lucide-vue-next'
@@ -12,6 +12,8 @@ import type { CalendarEvent, TaskItem } from '@/types/models'
 import { formatDateTime } from '@/utils/dates'
 import ScheduleEditor from '@/components/courses/ScheduleEditor.vue'
 import EventFormModal from '@/components/events/EventFormModal.vue'
+import GradesPanel from '@/components/grades/GradesPanel.vue'
+import NotesPanel from '@/components/notes/NotesPanel.vue'
 import TaskFormModal from '@/components/tasks/TaskFormModal.vue'
 import TaskRow from '@/components/tasks/TaskRow.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
@@ -23,7 +25,29 @@ const toast = useToast()
 const queryClient = useQueryClient()
 
 const courseId = computed(() => String(route.params.id))
-const tab = ref<'schedule' | 'events' | 'tasks' | 'notes' | 'grades'>('schedule')
+
+const tabIds = ['schedule', 'events', 'tasks', 'notes', 'grades'] as const
+type TabId = (typeof tabIds)[number]
+
+function isTabId(value: unknown): value is TabId {
+  return typeof value === 'string' && (tabIds as readonly string[]).includes(value)
+}
+
+const initialTab = route.query.tab
+const tab = ref<TabId>(isTabId(initialTab) ? initialTab : 'schedule')
+
+watch(tab, (value) => {
+  void router.replace({ query: { ...route.query, tab: value } })
+})
+
+watch(
+  () => route.query.tab,
+  (value) => {
+    if (isTabId(value) && value !== tab.value) {
+      tab.value = value
+    }
+  },
+)
 
 const courseQuery = useQuery({
   queryKey: computed(() => keys.course(courseId.value)),
@@ -226,13 +250,12 @@ const courses = computed(() => (courseQuery.data.value ? [courseQuery.data.value
         </ul>
       </section>
 
-      <section
-        v-else
-        class="card border-dashed text-center text-sm text-slate-500 dark:text-slate-400"
-      >
-        {{
-          tab === 'notes' ? 'Los apuntes llegan en la Etapa 2.' : 'Las notas llegan en la Etapa 2.'
-        }}
+      <section v-else-if="tab === 'notes'">
+        <NotesPanel :course-id="courseId" embedded />
+      </section>
+
+      <section v-else>
+        <GradesPanel :course-id="courseId" />
       </section>
     </template>
 

@@ -54,14 +54,12 @@ const router = createRouter({
         {
           path: 'apuntes',
           name: 'notes',
-          component: () => import('@/pages/PlaceholderPage.vue'),
-          props: { title: 'Apuntes' },
+          component: () => import('@/pages/NotesPage.vue'),
         },
         {
           path: 'notas',
           name: 'grades',
-          component: () => import('@/pages/PlaceholderPage.vue'),
-          props: { title: 'Notas' },
+          component: () => import('@/pages/GradesPage.vue'),
         },
         {
           path: 'ajustes',

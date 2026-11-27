@@ -2,9 +2,10 @@
 import { computed } from 'vue'
 import { useQuery } from '@tanstack/vue-query'
 import { useRouter } from 'vue-router'
-import { BookOpen, CalendarDays, CheckSquare, Plus } from 'lucide-vue-next'
+import { BookOpen, CalendarDays, CheckSquare, GraduationCap, Plus } from 'lucide-vue-next'
 import { coursesApi } from '@/api/courses'
 import { eventsApi } from '@/api/events'
+import { gradesApi } from '@/api/grades'
 import { keys } from '@/api/keys'
 import { tasksApi } from '@/api/tasks'
 import { useAuthStore } from '@/stores/auth'
@@ -57,12 +58,18 @@ const eventsQuery = useQuery({
     }),
 })
 
+const gradesQuery = useQuery({
+  queryKey: keys.gradeSummaries(14),
+  queryFn: () => gradesApi.summaries(14),
+})
+
 const loading = computed(
   () =>
     scheduleQuery.isLoading.value ||
     coursesQuery.isLoading.value ||
     tasksQuery.isLoading.value ||
-    eventsQuery.isLoading.value,
+    eventsQuery.isLoading.value ||
+    gradesQuery.isLoading.value,
 )
 
 const courses = computed(() => coursesQuery.data.value?.content ?? [])
@@ -93,6 +100,18 @@ const upcomingEvents = computed(() =>
 const pendingCount = computed(
   () => (tasksQuery.data.value?.content ?? []).filter((task) => task.status !== 'done').length,
 )
+
+const gradedSummaries = computed(() =>
+  (gradesQuery.data.value ?? []).filter((summary) => summary.gradedCount > 0),
+)
+
+function summaryAverage(value: number | null): string {
+  return value === null || value === undefined ? '—' : value.toFixed(1)
+}
+
+function summaryPending(value: number): string {
+  return Number(value.toFixed(2)).toString()
+}
 </script>
 
 <template>
@@ -220,6 +239,43 @@ const pendingCount = computed(
           </button>
         </section>
       </div>
+
+      <section class="card">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <h2 class="flex items-center gap-2 font-medium">
+            <GraduationCap class="size-4 text-brand-600" />
+            Promedio del semestre
+          </h2>
+          <button class="btn-ghost" @click="router.push({ name: 'grades' })">Ver notas</button>
+        </div>
+
+        <p v-if="!gradedSummaries.length" class="mt-3 text-sm text-slate-500 dark:text-slate-400">
+          Añade evaluaciones en tus cursos para ver tu promedio ponderado.
+        </p>
+
+        <ul v-else class="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <li
+            v-for="summary in gradedSummaries"
+            :key="summary.courseId"
+            class="flex items-center gap-3 rounded-lg border border-slate-100 p-3 dark:border-slate-800"
+          >
+            <span
+              class="size-2.5 shrink-0 rounded-full"
+              :style="{ backgroundColor: summary.courseColor }"
+            />
+            <div class="min-w-0 flex-1">
+              <p class="truncate text-sm font-medium">{{ summary.courseName }}</p>
+              <p class="text-xs text-slate-500 dark:text-slate-400">
+                Pendiente {{ summaryPending(summary.totalWeightPending) }}%
+              </p>
+            </div>
+            <span class="shrink-0 text-lg font-semibold">
+              {{ summaryAverage(summary.average20) }}
+              <span class="text-xs font-normal text-slate-400">/ 20</span>
+            </span>
+          </li>
+        </ul>
+      </section>
 
       <section class="grid gap-4 sm:grid-cols-3">
         <button

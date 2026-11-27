@@ -142,3 +142,71 @@ export interface TaskInput {
   dueAt?: string | null
   subtasks?: { id?: string; title: string; done?: boolean }[]
 }
+
+export interface NoteSummary {
+  id: string
+  title: string
+  courseId: string | null
+  courseName: string | null
+  courseColor: string | null
+  tags: string[]
+  pinned: boolean
+  excerpt: string
+  createdAt: string
+  updatedAt: string
+}
+
+export interface Note extends Omit<NoteSummary, 'excerpt'> {
+  contentMd: string
+}
+
+export interface NoteInput {
+  title: string
+  contentMd?: string
+  courseId?: string | null
+  tags?: string[]
+  pinned?: boolean
+}
+
+export interface Assessment {
+  id: string
+  courseId: string
+  courseName: string
+  courseColor: string
+  name: string
+  weight: number
+  score: number | null
+  maxScore: number
+  percentage: number | null
+  dueAt: string | null
+  notes: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+export interface AssessmentInput {
+  name: string
+  weight: number
+  score?: number | null
+  maxScore: number
+  dueAt?: string | null
+  notes?: string | null
+}
+
+export interface GradeSummary {
+  courseId: string
+  courseName: string
+  courseColor: string
+  weightedAverage: number | null
+  average20: number | null
+  totalWeight: number
+  totalWeightRegistered: number
+  totalWeightPending: number
+  weightsValid: boolean
+  gradedCount: number
+  pendingCount: number
+  target: number
+  neededFor: number | null
+  achievable: boolean
+  message: string
+}
