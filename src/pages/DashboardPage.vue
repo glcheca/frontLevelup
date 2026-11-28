@@ -1,25 +1,41 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useQuery } from '@tanstack/vue-query'
 import { useRouter } from 'vue-router'
-import { BookOpen, CalendarDays, CheckSquare, GraduationCap, Plus } from 'lucide-vue-next'
+import {
+  AlarmClock,
+  BookOpen,
+  CalendarDays,
+  CalendarPlus,
+  CheckSquare,
+  GraduationCap,
+  NotebookPen,
+  Plus,
+  Timer,
+  TrendingDown,
+} from 'lucide-vue-next'
 import { coursesApi } from '@/api/courses'
 import { eventsApi } from '@/api/events'
 import { gradesApi } from '@/api/grades'
 import { keys } from '@/api/keys'
+import { remindersApi } from '@/api/reminders'
 import { tasksApi } from '@/api/tasks'
 import { useAuthStore } from '@/stores/auth'
 import {
   addDays,
+  dayKey,
   endOfDay,
+  formatDayShort,
   formatDueLabel,
   formatTime,
   isoWeekday,
   shortTime,
   startOfDay,
 } from '@/utils/dates'
+import { formatCountdown, minutesUntil } from '@/utils/relative'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import SkeletonBlock from '@/components/ui/SkeletonBlock.vue'
+import ReminderFormModal from '@/components/reminders/ReminderFormModal.vue'
 
 const auth = useAuthStore()
 const router = useRouter()
@@ -63,13 +79,21 @@ const gradesQuery = useQuery({
   queryFn: () => gradesApi.summaries(14),
 })
 
+const remindersTodayQuery = useQuery({
+  queryKey: keys.reminders({ dashboard: true }),
+  queryFn: () => remindersApi.list('pending'),
+})
+
+const reminderFormOpen = ref(false)
+
 const loading = computed(
   () =>
     scheduleQuery.isLoading.value ||
     coursesQuery.isLoading.value ||
     tasksQuery.isLoading.value ||
     eventsQuery.isLoading.value ||
-    gradesQuery.isLoading.value,
+    gradesQuery.isLoading.value ||
+    remindersTodayQuery.isLoading.value,
 )
 
 const courses = computed(() => coursesQuery.data.value?.content ?? [])
@@ -112,6 +136,62 @@ function summaryAverage(value: number | null): string {
 function summaryPending(value: number): string {
   return Number(value.toFixed(2)).toString()
 }
+
+const todayKey = computed(() => dayKey(new Date()))
+
+const todayTasks = computed(() =>
+  (tasksQuery.data.value?.content ?? []).filter(
+    (task) => task.status !== 'done' && task.dueAt && dayKey(task.dueAt) === todayKey.value,
+  ),
+)
+
+const todayEvents = computed(() =>
+  (eventsQuery.data.value?.content ?? []).filter(
+    (event) => event.status !== 'cancelled' && dayKey(event.startAt) === todayKey.value,
+  ),
+)
+
+const todayReminders = computed(() =>
+  (remindersTodayQuery.data.value ?? [])
+    .filter((reminder) => dayKey(reminder.triggerAt) === todayKey.value)
+    .sort((a, b) => a.triggerAt.localeCompare(b.triggerAt)),
+)
+
+const nextClass = computed(() => {
+  const now = new Date()
+  const blocks = scheduleQuery.data.value ?? []
+  for (let offset = 0; offset < 7; offset += 1) {
+    const day = addDays(now, offset)
+    const weekday = isoWeekday(day)
+    const candidates = blocks
+      .filter((block) => block.dayOfWeek === weekday)
+      .sort((a, b) => a.startTime.localeCompare(b.startTime))
+    for (const block of candidates) {
+      const [hours, minutes] = block.startTime.split(':').map(Number)
+      const start = new Date(day)
+      start.setHours(hours ?? 0, minutes ?? 0, 0, 0)
+      if (start.getTime() > now.getTime()) {
+        return { block, start, minutes: minutesUntil(start.toISOString(), now) }
+      }
+    }
+  }
+  return null
+})
+
+const isDayOff = computed(
+  () =>
+    todayClasses.value.length === 0 &&
+    todayTasks.value.length === 0 &&
+    todayEvents.value.length === 0 &&
+    todayReminders.value.length === 0,
+)
+
+const riskCourse = computed(
+  () =>
+    gradedSummaries.value
+      .filter((summary) => summary.average20 !== null && summary.average20 < 14)
+      .sort((a, b) => (a.average20 ?? 0) - (b.average20 ?? 0))[0] ?? null,
+)
 </script>
 
 <template>
@@ -120,7 +200,10 @@ function summaryPending(value: number): string {
       <p class="text-sm text-slate-500 dark:text-slate-400">{{ today }}</p>
       <h1 class="mt-1 text-2xl font-semibold tracking-tight">Hola, {{ auth.user?.name }}</h1>
       <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
-        <template v-if="hasCourses">
+        <template v-if="hasCourses && isDayOff">
+          Hoy no tienes clases ni entregas: tienes el día libre.
+        </template>
+        <template v-else-if="hasCourses">
           Tienes {{ todayClasses.length }} clase(s) hoy y {{ pendingCount }} tarea(s) pendiente(s).
         </template>
         <template v-else> Empecemos por crear tu primer curso. </template>
@@ -134,6 +217,37 @@ function summaryPending(value: number): string {
     </div>
 
     <template v-else>
+      <div class="flex flex-wrap gap-2">
+        <button
+          class="btn-ghost border border-slate-200 dark:border-slate-700"
+          @click="router.push({ name: 'events', query: { new: '1' } })"
+        >
+          <CalendarPlus class="size-4" />
+          Nuevo evento
+        </button>
+        <button
+          class="btn-ghost border border-slate-200 dark:border-slate-700"
+          @click="router.push({ name: 'tasks', query: { new: '1' } })"
+        >
+          <CheckSquare class="size-4" />
+          Nueva tarea
+        </button>
+        <button
+          class="btn-ghost border border-slate-200 dark:border-slate-700"
+          @click="router.push({ name: 'notes' })"
+        >
+          <NotebookPen class="size-4" />
+          Nuevo apunte
+        </button>
+        <button
+          class="btn-ghost border border-slate-200 dark:border-slate-700"
+          @click="reminderFormOpen = true"
+        >
+          <AlarmClock class="size-4" />
+          Nuevo recordatorio
+        </button>
+      </div>
+
       <EmptyState
         v-if="!hasCourses"
         :icon="BookOpen"
@@ -146,12 +260,20 @@ function summaryPending(value: number): string {
         </button>
       </EmptyState>
 
-      <div v-else class="grid gap-4 lg:grid-cols-3">
-        <section class="card lg:col-span-1">
+      <div v-else class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <section class="card">
           <h2 class="flex items-center gap-2 font-medium">
             <CalendarDays class="size-4 text-brand-600" />
             Clases de hoy
           </h2>
+          <p
+            v-if="nextClass"
+            class="mt-3 flex items-center gap-1.5 rounded-lg bg-brand-50 px-2.5 py-1.5 text-xs font-medium text-brand-700 dark:bg-brand-900/30 dark:text-brand-300"
+          >
+            <Timer class="size-3.5 shrink-0" />
+            Próxima: {{ nextClass.block.courseName }} · {{ formatDayShort(nextClass.start) }}
+            {{ shortTime(nextClass.block.startTime) }} ({{ formatCountdown(nextClass.minutes) }})
+          </p>
           <p v-if="!todayClasses.length" class="mt-3 text-sm text-slate-500 dark:text-slate-400">
             Hoy no tienes clases programadas.
           </p>
@@ -176,11 +298,14 @@ function summaryPending(value: number): string {
           </ul>
         </section>
 
-        <section class="card lg:col-span-1">
+        <section class="card">
           <h2 class="flex items-center gap-2 font-medium">
             <CheckSquare class="size-4 text-brand-600" />
             Próximas entregas
           </h2>
+          <p class="mt-1 text-xs text-slate-400">
+            Hoy: {{ todayTasks.length }} · 7 días: {{ upcomingTasks.length }}
+          </p>
           <p v-if="!upcomingTasks.length" class="mt-3 text-sm text-slate-500 dark:text-slate-400">
             Nada que entregar esta semana.
           </p>
@@ -209,7 +334,7 @@ function summaryPending(value: number): string {
           </button>
         </section>
 
-        <section class="card lg:col-span-1">
+        <section class="card">
           <h2 class="flex items-center gap-2 font-medium">
             <CalendarDays class="size-4 text-brand-600" />
             Próximos eventos
@@ -238,6 +363,43 @@ function summaryPending(value: number): string {
             Abrir calendario
           </button>
         </section>
+
+        <section class="card">
+          <div class="flex items-start justify-between gap-2">
+            <h2 class="flex items-center gap-2 font-medium">
+              <AlarmClock class="size-4 text-brand-600" />
+              Recordatorios de hoy
+            </h2>
+            <button
+              class="btn-ghost size-7 shrink-0 p-0"
+              aria-label="Nuevo recordatorio"
+              @click="reminderFormOpen = true"
+            >
+              <Plus class="size-4" />
+            </button>
+          </div>
+          <p v-if="!todayReminders.length" class="mt-3 text-sm text-slate-500 dark:text-slate-400">
+            No tienes avisos para hoy.
+          </p>
+          <ul v-else class="mt-3 space-y-2">
+            <li
+              v-for="reminder in todayReminders"
+              :key="reminder.id"
+              class="flex items-center gap-3"
+            >
+              <span class="size-2.5 shrink-0 rounded-full bg-amber-400" />
+              <div class="min-w-0 flex-1">
+                <p class="truncate text-sm font-medium">{{ reminder.title }}</p>
+                <p v-if="reminder.body" class="truncate text-xs text-slate-500">
+                  {{ reminder.body }}
+                </p>
+              </div>
+              <span class="shrink-0 text-xs font-medium text-slate-500 dark:text-slate-400">
+                {{ formatTime(reminder.triggerAt) }}
+              </span>
+            </li>
+          </ul>
+        </section>
       </div>
 
       <section class="card">
@@ -248,6 +410,15 @@ function summaryPending(value: number): string {
           </h2>
           <button class="btn-ghost" @click="router.push({ name: 'grades' })">Ver notas</button>
         </div>
+
+        <p
+          v-if="riskCourse"
+          class="mt-2 flex items-center gap-1.5 text-xs font-medium text-amber-600 dark:text-amber-400"
+        >
+          <TrendingDown class="size-3.5 shrink-0" />
+          Curso en riesgo: {{ riskCourse.courseName }} ({{ summaryAverage(riskCourse.average20) }} /
+          20)
+        </p>
 
         <p v-if="!gradedSummaries.length" class="mt-3 text-sm text-slate-500 dark:text-slate-400">
           Añade evaluaciones en tus cursos para ver tu promedio ponderado.
@@ -303,5 +474,7 @@ function summaryPending(value: number): string {
         </button>
       </section>
     </template>
+
+    <ReminderFormModal :open="reminderFormOpen" @close="reminderFormOpen = false" />
   </div>
 </template>

@@ -17,6 +17,7 @@ const props = defineProps<{
   embedded?: boolean
   tag?: string
   query?: string
+  noteId?: string
 }>()
 const emit = defineEmits<{ 'update:tag': [string]; 'update:query': [string] }>()
 
@@ -82,6 +83,8 @@ const notes = computed(() => notesQuery.data.value?.content ?? [])
 const tags = computed(() => tagsQuery.data.value ?? [])
 const courses = computed(() => coursesQuery.data.value?.content ?? [])
 
+let appliedNoteId: string | null = null
+
 watch(
   notes,
   (list) => {
@@ -89,11 +92,31 @@ watch(
       selectedId.value = null
       return
     }
+    if (
+      props.noteId &&
+      props.noteId !== appliedNoteId &&
+      list.some((note) => note.id === props.noteId)
+    ) {
+      appliedNoteId = props.noteId
+      selectedId.value = props.noteId
+      return
+    }
     if (!selectedId.value || !list.some((note) => note.id === selectedId.value)) {
       selectedId.value = list[0]!.id
     }
   },
   { immediate: true },
+)
+
+watch(
+  () => props.noteId,
+  (id) => {
+    appliedNoteId = null
+    if (id && notes.value.some((note) => note.id === id)) {
+      appliedNoteId = id
+      selectedId.value = id
+    }
+  },
 )
 
 const detailQuery = useQuery({

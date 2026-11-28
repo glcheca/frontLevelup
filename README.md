@@ -43,10 +43,10 @@ así que no hay CORS en desarrollo.
 ```
 src/
 ├─ api/          cliente Axios, token en memoria, endpoints y claves de caché
-├─ components/   ui (modal, empty state, skeleton), courses, events, tasks, notes, grades
+├─ components/   ui, courses, events, tasks, notes, grades, notifications, reminders, search
 ├─ composables/  tema, toasts
-├─ layouts/      AppLayout (sidebar) y AuthLayout
-├─ pages/        login, registro, dashboard, cursos, detalle, calendario, eventos, tareas, apuntes, notas
+├─ layouts/      AppLayout (sidebar, campanita y command palette) y AuthLayout
+├─ pages/        login, registro, dashboard, cursos, detalle, calendario, eventos, tareas, apuntes, notas, ajustes
 ├─ router/       rutas y guard de sesión
 ├─ stores/       auth (usuario + sesión)
 ├─ types/        modelos compartidos
@@ -62,6 +62,9 @@ src/
 - **Etapa 2:** apuntes en markdown con autoguardado, búsqueda sin tildes, etiquetas, fijar y filtros
   en la URL; calificaciones ponderadas con promedio sobre 20, aviso de pesos, "qué necesito para X"
   y promedio por curso en el dashboard.
+- **Etapa 3:** campanita de notificaciones con polling, recordatorios configurables por evento/tarea,
+  búsqueda global con `Ctrl/Cmd + K`, ajustes (perfil, zona horaria, tema, contraseña y borrado de
+  cuenta) y dashboard "Hoy" con próxima clase, avisos del día y curso en riesgo.
 
 ## Sesión
 
@@ -72,15 +75,16 @@ src/
 
 ## Caché de servidor
 
-TanStack Query guarda cursos, horario, eventos, tareas, apuntes y resúmenes de notas. Al mutar un
-curso se invalidan las claves relacionadas, de modo que un cambio de color o nombre se refleja en
-calendario, tareas, apuntes y dashboard sin recargar la página.
+TanStack Query guarda cursos, horario, eventos, tareas, apuntes, recordatorios y resúmenes de notas.
+Al mutar un curso se invalidan las claves relacionadas, de modo que un cambio de color o nombre se
+refleja en calendario, tareas, apuntes y dashboard sin recargar la página. El contador de
+notificaciones se refresca cada 60 s (pausado si la pestaña está oculta).
 
 ## Pendiente
 
 - [x] Toggle de tema claro/oscuro/sistema
 - [x] CI (lint + format + test + build) en verde
-- [x] Tests con Vitest (`npm test`, 21 tests)
+- [x] Tests con Vitest (`npm test`, 24 tests)
 - [x] Validado contra PostgreSQL real vía proxy `/api`
 - [ ] Arrastrar para seleccionar rangos en el calendario (Etapa 4)
-- [ ] Recordatorios in-app (Etapa 3)
+- [ ] Notificaciones push / PWA (backlog)

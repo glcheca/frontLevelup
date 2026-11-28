@@ -5,6 +5,8 @@ export interface User {
   timezone: string
   locale: string
   theme: 'light' | 'dark' | 'system'
+  notifyEvents: boolean
+  notifyTasks: boolean
 }
 
 export interface AuthResponse {
@@ -90,6 +92,7 @@ export interface CalendarEvent {
   allDay: boolean
   location: string | null
   status: EventStatus
+  reminderOffsetMinutes: number | null
   createdAt: string
   updatedAt: string
 }
@@ -104,6 +107,7 @@ export interface EventInput {
   allDay?: boolean
   location?: string | null
   status?: EventStatus
+  reminderOffsetMinutes?: number | null
 }
 
 export type TaskStatus = 'todo' | 'doing' | 'done'
@@ -128,6 +132,7 @@ export interface TaskItem {
   completedAt: string | null
   overdue: boolean
   subtasks: Subtask[]
+  reminderOffsetMinutes: number | null
   createdAt: string
   updatedAt: string
 }
@@ -141,6 +146,7 @@ export interface TaskInput {
   priority?: number
   dueAt?: string | null
   subtasks?: { id?: string; title: string; done?: boolean }[]
+  reminderOffsetMinutes?: number | null
 }
 
 export interface NoteSummary {
@@ -209,4 +215,56 @@ export interface GradeSummary {
   neededFor: number | null
   achievable: boolean
   message: string
+}
+
+export type ReminderTargetType = 'task' | 'event' | 'custom'
+export type ReminderStatus = 'pending' | 'sent' | 'failed' | 'cancelled'
+
+export interface Reminder {
+  id: string
+  title: string
+  body: string | null
+  triggerAt: string
+  status: ReminderStatus
+  targetType: ReminderTargetType
+  targetId: string | null
+  targetLabel: string | null
+  attempts: number
+  sentAt: string | null
+  createdAt: string
+}
+
+export interface ReminderInput {
+  title: string
+  body?: string | null
+  triggerAt: string
+  targetType?: ReminderTargetType
+  targetId?: string | null
+}
+
+export interface AppNotification {
+  id: string
+  title: string
+  body: string | null
+  read: boolean
+  readAt: string | null
+  createdAt: string
+  targetType: ReminderTargetType | null
+  targetId: string | null
+}
+
+export type SearchItemType = 'course' | 'event' | 'task' | 'note'
+
+export interface SearchItem {
+  id: string
+  title: string
+  subtitle: string | null
+  type: SearchItemType
+}
+
+export interface SearchResponse {
+  courses: SearchItem[]
+  events: SearchItem[]
+  tasks: SearchItem[]
+  notes: SearchItem[]
 }

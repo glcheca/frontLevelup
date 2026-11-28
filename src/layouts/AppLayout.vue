@@ -1,8 +1,7 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { RouterLink, RouterView, useRouter } from 'vue-router'
 import {
-  Bell,
   BookOpen,
   CalendarClock,
   CalendarDays,
@@ -22,10 +21,23 @@ import {
 import { useTheme, type Theme } from '@/composables/useTheme'
 import { useAuthStore } from '@/stores/auth'
 import Toaster from '@/components/Toaster.vue'
+import NotificationsBell from '@/components/notifications/NotificationsBell.vue'
+import CommandPalette from '@/components/search/CommandPalette.vue'
 
 const auth = useAuthStore()
 const router = useRouter()
 const sidebarOpen = ref(false)
+const paletteOpen = ref(false)
+
+function onGlobalKeydown(event: KeyboardEvent) {
+  if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
+    event.preventDefault()
+    paletteOpen.value = !paletteOpen.value
+  }
+}
+
+onMounted(() => window.addEventListener('keydown', onGlobalKeydown))
+onBeforeUnmount(() => window.removeEventListener('keydown', onGlobalKeydown))
 
 const { theme, resolvedTheme, setTheme } = useTheme()
 
@@ -134,17 +146,18 @@ async function handleLogout() {
           <Menu class="size-5" />
         </button>
 
-        <div class="relative hidden max-w-md flex-1 sm:block">
-          <Search
-            class="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-slate-400"
-          />
-          <input
-            class="input pl-9"
-            type="search"
-            placeholder="Buscar apuntes, eventos, tareas…"
-            disabled
-          />
-        </div>
+        <button
+          class="hidden w-full max-w-md items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-left text-sm text-slate-400 transition hover:border-brand-400 sm:flex dark:border-slate-700 dark:bg-slate-900"
+          @click="paletteOpen = true"
+        >
+          <Search class="size-4 shrink-0" />
+          <span class="flex-1 truncate">Buscar apuntes, eventos, tareas…</span>
+          <kbd
+            class="rounded border border-slate-300 px-1.5 py-0.5 text-[10px] dark:border-slate-700"
+          >
+            Ctrl K
+          </kbd>
+        </button>
 
         <div class="ml-auto flex items-center gap-2">
           <button
@@ -155,9 +168,7 @@ async function handleLogout() {
           >
             <component :is="themeIcon" class="size-5" />
           </button>
-          <button class="btn-ghost relative size-9 p-0" aria-label="Notificaciones" disabled>
-            <Bell class="size-5" />
-          </button>
+          <NotificationsBell />
           <div
             class="flex items-center gap-2 rounded-full border border-slate-200 py-1 pr-3 pl-1 dark:border-slate-700"
           >
@@ -177,5 +188,6 @@ async function handleLogout() {
     </div>
 
     <Toaster />
+    <CommandPalette :open="paletteOpen" @close="paletteOpen = false" />
   </div>
 </template>

@@ -36,6 +36,8 @@ const user: User = {
   timezone: 'America/Lima',
   locale: 'es',
   theme: 'dark',
+  notifyEvents: true,
+  notifyTasks: true,
 }
 
 const session: AuthResponse = { accessToken: 'access-token', user }

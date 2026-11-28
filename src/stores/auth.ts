@@ -67,6 +67,22 @@ export const useAuthStore = defineStore('auth', () => {
     user.value = await userApi.updateProfile({ theme })
   }
 
+  async function updateProfile(payload: {
+    name?: string
+    timezone?: string
+    theme?: Theme
+    notifyEvents?: boolean
+    notifyTasks?: boolean
+  }) {
+    user.value = await userApi.updateProfile(payload)
+    return user.value
+  }
+
+  function clearSession() {
+    setAccessToken(null)
+    user.value = null
+  }
+
   return {
     user,
     initialized,
@@ -78,5 +94,7 @@ export const useAuthStore = defineStore('auth', () => {
     bootstrap,
     logout,
     saveTheme,
+    updateProfile,
+    clearSession,
   }
 })

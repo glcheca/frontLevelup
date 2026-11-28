@@ -85,6 +85,7 @@ const completeMutation = useMutation({
           priority: task.priority,
           dueAt: task.dueAt,
           subtasks: task.subtasks,
+          reminderOffsetMinutes: task.reminderOffsetMinutes,
         }),
   onSuccess: async () => {
     await invalidateTasks(queryClient)

@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
+import { useRoute } from 'vue-router'
 import { CheckSquare, Plus } from 'lucide-vue-next'
 import { coursesApi } from '@/api/courses'
 import { keys } from '@/api/keys'
@@ -15,6 +16,7 @@ import SkeletonBlock from '@/components/ui/SkeletonBlock.vue'
 
 const toast = useToast()
 const queryClient = useQueryClient()
+const route = useRoute()
 
 const LIST_KEY = ['tasks', { page: 'tasks' }] as const
 
@@ -24,6 +26,12 @@ const priorityFilter = ref<'all' | '0' | '1' | '2'>('all')
 
 const formOpen = ref(false)
 const editing = ref<TaskItem | null>(null)
+
+onMounted(() => {
+  if (route.query.new === '1') {
+    formOpen.value = true
+  }
+})
 
 const tasksQuery = useQuery({
   queryKey: LIST_KEY,
@@ -90,6 +98,7 @@ const completeMutation = useMutation({
           priority: task.priority,
           dueAt: task.dueAt,
           subtasks: task.subtasks,
+          reminderOffsetMinutes: task.reminderOffsetMinutes,
         }),
   onMutate: async ({ task, done }) => {
     await queryClient.cancelQueries({ queryKey: LIST_KEY })

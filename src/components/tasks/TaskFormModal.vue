@@ -8,6 +8,7 @@ import { tasksApi } from '@/api/tasks'
 import { useToast } from '@/composables/useToast'
 import type { Course, TaskItem, TaskStatus } from '@/types/models'
 import { isoToLocalInput, localInputToIso } from '@/utils/dates'
+import { REMINDER_OFFSETS } from '@/utils/relative'
 import AppModal from '@/components/ui/AppModal.vue'
 
 const props = defineProps<{
@@ -37,6 +38,7 @@ const form = reactive({
   priority: 1,
   dueAt: '',
   subtasks: [] as { id?: string; title: string; done: boolean }[],
+  reminderOffsetMinutes: 1440 as number | null,
 })
 
 const errors = ref<Record<string, string>>({})
@@ -57,6 +59,7 @@ watch(
       form.priority = task.priority
       form.dueAt = task.dueAt ? isoToLocalInput(task.dueAt) : ''
       form.subtasks = task.subtasks.map((subtask) => ({ ...subtask }))
+      form.reminderOffsetMinutes = task.reminderOffsetMinutes ?? null
     } else {
       form.title = ''
       form.description = ''
@@ -65,6 +68,7 @@ watch(
       form.priority = 1
       form.dueAt = props.defaultDue ? isoToLocalInput(props.defaultDue) : ''
       form.subtasks = []
+      form.reminderOffsetMinutes = 1440
     }
   },
   { immediate: true },
@@ -84,6 +88,7 @@ const mutation = useMutation({
         title: subtask.title,
         done: subtask.done,
       })),
+      reminderOffsetMinutes: form.reminderOffsetMinutes,
     }
     return props.task ? tasksApi.update(props.task.id, payload) : tasksApi.create(payload)
   },
@@ -161,6 +166,19 @@ function submit() {
             <option :value="0">Baja</option>
             <option :value="1">Media</option>
             <option :value="2">Alta</option>
+          </select>
+        </label>
+
+        <label class="block sm:col-span-2">
+          <span class="text-sm font-medium">Aviso</span>
+          <select v-model="form.reminderOffsetMinutes" class="input mt-1">
+            <option
+              v-for="option in REMINDER_OFFSETS"
+              :key="String(option.value)"
+              :value="option.value"
+            >
+              {{ option.label }}
+            </option>
           </select>
         </label>
       </div>

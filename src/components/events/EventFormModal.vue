@@ -13,6 +13,7 @@ import {
   isoToLocalInput,
   localInputToIso,
 } from '@/utils/dates'
+import { REMINDER_OFFSETS } from '@/utils/relative'
 import AppModal from '@/components/ui/AppModal.vue'
 
 const props = defineProps<{
@@ -65,6 +66,7 @@ const form = reactive({
   startAt: '',
   endAt: '',
   location: '',
+  reminderOffsetMinutes: 60 as number | null,
 })
 
 const errors = ref<Record<string, string>>({})
@@ -94,6 +96,7 @@ watch(
       form.startAt = isoToLocalInput(event.startAt)
       form.endAt = isoToLocalInput(event.endAt)
       form.location = event.location ?? ''
+      form.reminderOffsetMinutes = event.reminderOffsetMinutes ?? null
     } else {
       const base = props.defaultDate ?? new Date()
       const { start, end } = defaultRange(base)
@@ -107,6 +110,7 @@ watch(
       form.startAt = isoToLocalInput(start.toISOString())
       form.endAt = isoToLocalInput(end.toISOString())
       form.location = ''
+      form.reminderOffsetMinutes = 60
     }
   },
   { immediate: true },
@@ -128,6 +132,7 @@ const mutation = useMutation({
       location: form.location.trim() || null,
       startAt,
       endAt,
+      reminderOffsetMinutes: form.reminderOffsetMinutes,
     }
     return props.event ? eventsApi.update(props.event.id, payload) : eventsApi.create(payload)
   },
@@ -220,6 +225,18 @@ function submit() {
         <label class="block">
           <span class="text-sm font-medium">Lugar</span>
           <input v-model="form.location" class="input mt-1" placeholder="Aula 201" />
+        </label>
+        <label class="block">
+          <span class="text-sm font-medium">Aviso</span>
+          <select v-model="form.reminderOffsetMinutes" class="input mt-1">
+            <option
+              v-for="option in REMINDER_OFFSETS"
+              :key="String(option.value)"
+              :value="option.value"
+            >
+              {{ option.label }}
+            </option>
+          </select>
         </label>
         <label class="block">
           <span class="text-sm font-medium">Estado</span>

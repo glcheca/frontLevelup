@@ -25,6 +25,8 @@ const query = computed({
   get: () => (typeof route.query.q === 'string' ? route.query.q : ''),
   set: (value: string) => setParam('q', value),
 })
+
+const noteId = computed(() => (typeof route.query.note === 'string' ? route.query.note : undefined))
 </script>
 
 <template>
@@ -36,6 +38,6 @@ const query = computed({
       </p>
     </header>
 
-    <NotesPanel v-model:tag="tag" v-model:query="query" />
+    <NotesPanel v-model:tag="tag" v-model:query="query" :note-id="noteId" />
   </div>
 </template>

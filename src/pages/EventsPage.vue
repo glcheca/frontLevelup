@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
+import { useRoute } from 'vue-router'
 import { CalendarDays, Plus } from 'lucide-vue-next'
 import { coursesApi } from '@/api/courses'
 import { eventsApi } from '@/api/events'
@@ -14,6 +15,7 @@ import SkeletonBlock from '@/components/ui/SkeletonBlock.vue'
 
 const toast = useToast()
 const queryClient = useQueryClient()
+const route = useRoute()
 
 const rangeStart = computed(() => startOfDay(new Date()))
 const rangeEnd = computed(() => endOfDay(addDays(new Date(), 60)))
@@ -21,6 +23,12 @@ const RANGE_KEY = computed(() => ['events', { agenda: dayKey(rangeStart.value) }
 
 const formOpen = ref(false)
 const editing = ref<CalendarEvent | null>(null)
+
+onMounted(() => {
+  if (route.query.new === '1') {
+    formOpen.value = true
+  }
+})
 
 const eventsQuery = useQuery({
   queryKey: RANGE_KEY,

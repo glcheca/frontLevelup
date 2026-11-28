@@ -64,8 +64,7 @@ const router = createRouter({
         {
           path: 'ajustes',
           name: 'settings',
-          component: () => import('@/pages/PlaceholderPage.vue'),
-          props: { title: 'Ajustes' },
+          component: () => import('@/pages/SettingsPage.vue'),
         },
       ],
     },

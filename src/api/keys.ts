@@ -17,6 +17,10 @@ export const keys = {
   grades: (courseId: string) => ['grades', courseId] as const,
   gradeSummary: (courseId: string, target: number) => ['grade-summary', courseId, target] as const,
   gradeSummaries: (target: number) => ['grade-summaries', target] as const,
+  reminders: (params: Record<string, unknown> = {}) => ['reminders', params] as const,
+  notifications: (params: Record<string, unknown> = {}) => ['notifications', params] as const,
+  notificationCount: () => ['notifications-unread'] as const,
+  search: (q: string) => ['search', q] as const,
 }
 
 export async function invalidateCourses(client: QueryClient, courseId?: string) {
@@ -35,11 +39,15 @@ export async function invalidateEvents(client: QueryClient) {
   await Promise.all([
     client.invalidateQueries({ queryKey: ['events'] }),
     client.invalidateQueries({ queryKey: ['tasks'] }),
+    client.invalidateQueries({ queryKey: ['reminders'] }),
   ])
 }
 
 export async function invalidateTasks(client: QueryClient) {
-  await client.invalidateQueries({ queryKey: ['tasks'] })
+  await Promise.all([
+    client.invalidateQueries({ queryKey: ['tasks'] }),
+    client.invalidateQueries({ queryKey: ['reminders'] }),
+  ])
 }
 
 export async function invalidateNotes(client: QueryClient, noteId?: string) {
@@ -55,5 +63,16 @@ export async function invalidateGrades(client: QueryClient, courseId: string) {
     client.invalidateQueries({ queryKey: ['grades', courseId] }),
     client.invalidateQueries({ queryKey: ['grade-summary'] }),
     client.invalidateQueries({ queryKey: ['grade-summaries'] }),
+  ])
+}
+
+export async function invalidateReminders(client: QueryClient) {
+  await client.invalidateQueries({ queryKey: ['reminders'] })
+}
+
+export async function invalidateNotifications(client: QueryClient) {
+  await Promise.all([
+    client.invalidateQueries({ queryKey: ['notifications'] }),
+    client.invalidateQueries({ queryKey: ['notifications-unread'] }),
   ])
 }
