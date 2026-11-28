@@ -255,7 +255,7 @@ function link() {
           #{{ tag }}
           <button
             type="button"
-            class="text-slate-400 hover:text-rose-600"
+            class="text-slate-500 hover:text-rose-600 dark:text-slate-400"
             :aria-label="`Quitar etiqueta ${tag}`"
             @click="removeTag(tag)"
           >
@@ -272,7 +272,7 @@ function link() {
 
         <span
           class="ml-auto inline-flex items-center gap-1 text-xs"
-          :class="status === 'error' ? 'text-rose-600' : 'text-slate-400 dark:text-slate-500'"
+          :class="status === 'error' ? 'text-rose-600' : 'text-slate-500 dark:text-slate-400'"
         >
           <component
             :is="statusIcon"

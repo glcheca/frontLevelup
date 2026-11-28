@@ -5,6 +5,7 @@ import { GraduationCap, Plus } from 'lucide-vue-next'
 import { gradesApi } from '@/api/grades'
 import { invalidateGrades, keys } from '@/api/keys'
 import { useToast } from '@/composables/useToast'
+import { useNewShortcut } from '@/composables/useNewShortcut'
 import type { Assessment } from '@/types/models'
 import AppModal from '@/components/ui/AppModal.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
@@ -55,6 +56,8 @@ function edit(grade: Assessment) {
   editing.value = grade
   formOpen.value = true
 }
+
+useNewShortcut(create)
 </script>
 
 <template>
@@ -76,7 +79,7 @@ function edit(grade: Assessment) {
     <div class="flex flex-wrap items-center justify-between gap-2">
       <p class="text-sm font-medium">
         Evaluaciones
-        <span class="text-slate-400">({{ grades.length }})</span>
+        <span class="text-slate-500 dark:text-slate-400">({{ grades.length }})</span>
       </p>
       <button class="btn-primary" @click="create">
         <Plus class="size-4" />

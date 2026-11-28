@@ -174,7 +174,7 @@ function onKeydown(event: KeyboardEvent) {
         <ul v-else class="max-h-[50vh] overflow-y-auto py-2">
           <template v-for="group in groups" :key="group.type">
             <li
-              class="px-4 pt-2 pb-1 text-[11px] font-medium tracking-wide text-slate-400 uppercase"
+              class="px-4 pt-2 pb-1 text-[11px] font-medium tracking-wide text-slate-500 uppercase dark:text-slate-400"
             >
               {{ group.label }}
             </li>

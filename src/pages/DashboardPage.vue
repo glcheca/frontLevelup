@@ -21,6 +21,7 @@ import { keys } from '@/api/keys'
 import { remindersApi } from '@/api/reminders'
 import { tasksApi } from '@/api/tasks'
 import { useAuthStore } from '@/stores/auth'
+import { useNewShortcut } from '@/composables/useNewShortcut'
 import {
   addDays,
   dayKey,
@@ -86,6 +87,10 @@ const remindersTodayQuery = useQuery({
 
 const reminderFormOpen = ref(false)
 
+useNewShortcut(() => {
+  reminderFormOpen.value = true
+})
+
 const loading = computed(
   () =>
     scheduleQuery.isLoading.value ||
@@ -95,6 +100,27 @@ const loading = computed(
     gradesQuery.isLoading.value ||
     remindersTodayQuery.isLoading.value,
 )
+
+const hasError = computed(
+  () =>
+    scheduleQuery.isError.value ||
+    coursesQuery.isError.value ||
+    tasksQuery.isError.value ||
+    eventsQuery.isError.value ||
+    gradesQuery.isError.value ||
+    remindersTodayQuery.isError.value,
+)
+
+function retryAll() {
+  void Promise.allSettled([
+    scheduleQuery.refetch(),
+    coursesQuery.refetch(),
+    tasksQuery.refetch(),
+    eventsQuery.refetch(),
+    gradesQuery.refetch(),
+    remindersTodayQuery.refetch(),
+  ])
+}
 
 const courses = computed(() => coursesQuery.data.value?.content ?? [])
 const hasCourses = computed(() => courses.value.length > 0)
@@ -210,6 +236,16 @@ const riskCourse = computed(
       </p>
     </section>
 
+    <div
+      v-if="hasError"
+      class="card flex flex-wrap items-center justify-between gap-3 border-amber-300 text-sm dark:border-amber-800"
+    >
+      <span class="text-slate-700 dark:text-slate-200">
+        Algunos datos no se pudieron cargar. Revisa tu conexión.
+      </span>
+      <button class="btn-ghost" @click="retryAll">Reintentar</button>
+    </div>
+
     <div v-if="loading" class="grid gap-4 lg:grid-cols-3">
       <div v-for="n in 3" :key="n" class="card">
         <SkeletonBlock :lines="4" />
@@ -303,7 +339,7 @@ const riskCourse = computed(
             <CheckSquare class="size-4 text-brand-600" />
             Próximas entregas
           </h2>
-          <p class="mt-1 text-xs text-slate-400">
+          <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
             Hoy: {{ todayTasks.length }} · 7 días: {{ upcomingTasks.length }}
           </p>
           <p v-if="!upcomingTasks.length" class="mt-3 text-sm text-slate-500 dark:text-slate-400">
@@ -413,7 +449,7 @@ const riskCourse = computed(
 
         <p
           v-if="riskCourse"
-          class="mt-2 flex items-center gap-1.5 text-xs font-medium text-amber-600 dark:text-amber-400"
+          class="mt-2 flex items-center gap-1.5 text-xs font-medium text-amber-700 dark:text-amber-400"
         >
           <TrendingDown class="size-3.5 shrink-0" />
           Curso en riesgo: {{ riskCourse.courseName }} ({{ summaryAverage(riskCourse.average20) }} /
@@ -442,7 +478,7 @@ const riskCourse = computed(
             </div>
             <span class="shrink-0 text-lg font-semibold">
               {{ summaryAverage(summary.average20) }}
-              <span class="text-xs font-normal text-slate-400">/ 20</span>
+              <span class="text-xs font-normal text-slate-500 dark:text-slate-400">/ 20</span>
             </span>
           </li>
         </ul>

@@ -121,7 +121,7 @@ function formatWeight(value: number): string {
 
     <p
       v-if="!summary.weightsValid && summary.totalWeight > 0"
-      class="text-xs font-medium text-amber-600 dark:text-amber-400"
+      class="text-xs font-medium text-amber-700 dark:text-amber-400"
     >
       Los pesos suman {{ formatWeight(summary.totalWeight) }}% (deberían sumar 100%).
     </p>

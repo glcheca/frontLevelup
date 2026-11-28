@@ -6,6 +6,7 @@ import { BookOpen, Plus } from 'lucide-vue-next'
 import { coursesApi } from '@/api/courses'
 import { invalidateCourses, keys } from '@/api/keys'
 import { useToast } from '@/composables/useToast'
+import { useNewShortcut } from '@/composables/useNewShortcut'
 import type { Course } from '@/types/models'
 import CourseCard from '@/components/courses/CourseCard.vue'
 import CourseFormModal from '@/components/courses/CourseFormModal.vue'
@@ -71,6 +72,8 @@ function openEdit(course: Course) {
   editing.value = course
   formOpen.value = true
 }
+
+useNewShortcut(openCreate)
 </script>
 
 <template>

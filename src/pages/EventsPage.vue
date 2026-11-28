@@ -2,14 +2,16 @@
 import { computed, onMounted, ref } from 'vue'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { useRoute } from 'vue-router'
-import { CalendarDays, Plus } from 'lucide-vue-next'
+import { CalendarDays, Pencil, Plus, Trash2 } from 'lucide-vue-next'
 import { coursesApi } from '@/api/courses'
 import { eventsApi } from '@/api/events'
 import { keys } from '@/api/keys'
 import { useToast } from '@/composables/useToast'
+import { useNewShortcut } from '@/composables/useNewShortcut'
 import type { CalendarEvent } from '@/types/models'
 import { addDays, dayKey, endOfDay, formatDayLong, formatTime, startOfDay } from '@/utils/dates'
 import EventFormModal from '@/components/events/EventFormModal.vue'
+import AppModal from '@/components/ui/AppModal.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import SkeletonBlock from '@/components/ui/SkeletonBlock.vue'
 
@@ -23,6 +25,7 @@ const RANGE_KEY = computed(() => ['events', { agenda: dayKey(rangeStart.value) }
 
 const formOpen = ref(false)
 const editing = ref<CalendarEvent | null>(null)
+const pendingDelete = ref<CalendarEvent | null>(null)
 
 onMounted(() => {
   if (route.query.new === '1') {
@@ -65,6 +68,7 @@ const days = computed(() => {
 const deleteMutation = useMutation({
   mutationFn: (eventId: string) => eventsApi.remove(eventId),
   onSuccess: async () => {
+    pendingDelete.value = null
     await queryClient.invalidateQueries({ queryKey: ['events'] })
     toast.success('Evento eliminado.')
   },
@@ -74,6 +78,11 @@ const deleteMutation = useMutation({
 function typeLabel(type: CalendarEvent['type']) {
   return { exam: 'Examen', assignment: 'Entrega', class: 'Clase', personal: 'Personal' }[type]
 }
+
+useNewShortcut(() => {
+  editing.value = null
+  formOpen.value = true
+})
 </script>
 
 <template>
@@ -129,16 +138,22 @@ function typeLabel(type: CalendarEvent['type']) {
               <template v-if="event.location"> · {{ event.location }}</template>
             </p>
           </div>
-          <div class="flex gap-1">
-            <button class="btn-ghost" @click="((editing = event), (formOpen = true))">
-              Editar
+          <div class="flex shrink-0 gap-1">
+            <button
+              class="btn-ghost size-8 p-0 sm:size-auto sm:px-3"
+              :aria-label="`Editar ${event.title}`"
+              @click="((editing = event), (formOpen = true))"
+            >
+              <Pencil class="size-4 sm:hidden" />
+              <span class="hidden sm:inline">Editar</span>
             </button>
             <button
-              class="btn-ghost text-rose-600"
-              aria-label="Borrar evento"
-              @click="deleteMutation.mutate(event.id)"
+              class="btn-ghost size-8 p-0 text-rose-600 sm:size-auto sm:px-3"
+              :aria-label="`Borrar ${event.title}`"
+              @click="pendingDelete = event"
             >
-              Borrar
+              <Trash2 class="size-4 sm:hidden" />
+              <span class="hidden sm:inline">Borrar</span>
             </button>
           </div>
         </li>
@@ -151,5 +166,21 @@ function typeLabel(type: CalendarEvent['type']) {
       :courses="courses"
       @close="((formOpen = false), (editing = null))"
     />
+
+    <AppModal :open="Boolean(pendingDelete)" title="Borrar evento" @close="pendingDelete = null">
+      <p class="text-sm text-slate-600 dark:text-slate-300">
+        “{{ pendingDelete?.title }}” se borrará junto con su recordatorio pendiente.
+      </p>
+      <div class="mt-4 flex justify-end gap-2">
+        <button class="btn-ghost" @click="pendingDelete = null">Cancelar</button>
+        <button
+          class="btn-primary bg-rose-600 hover:bg-rose-700"
+          :disabled="deleteMutation.isPending.value"
+          @click="pendingDelete && deleteMutation.mutate(pendingDelete.id)"
+        >
+          Borrar evento
+        </button>
+      </div>
+    </AppModal>
   </div>
 </template>

@@ -7,6 +7,7 @@ import {
   CalendarDays,
   CheckSquare,
   GraduationCap,
+  Keyboard,
   LayoutDashboard,
   LogOut,
   Menu,
@@ -19,20 +20,57 @@ import {
   X,
 } from 'lucide-vue-next'
 import { useTheme, type Theme } from '@/composables/useTheme'
+import { NEW_SHORTCUT_EVENT } from '@/composables/useNewShortcut'
 import { useAuthStore } from '@/stores/auth'
 import Toaster from '@/components/Toaster.vue'
 import NotificationsBell from '@/components/notifications/NotificationsBell.vue'
 import CommandPalette from '@/components/search/CommandPalette.vue'
+import ShortcutsModal from '@/components/ui/ShortcutsModal.vue'
 
 const auth = useAuthStore()
 const router = useRouter()
 const sidebarOpen = ref(false)
 const paletteOpen = ref(false)
+const shortcutsOpen = ref(false)
+
+function isTyping(target: EventTarget | null): boolean {
+  const element = target as HTMLElement | null
+  if (!element) return false
+  return (
+    element.tagName === 'INPUT' ||
+    element.tagName === 'TEXTAREA' ||
+    element.tagName === 'SELECT' ||
+    element.isContentEditable
+  )
+}
 
 function onGlobalKeydown(event: KeyboardEvent) {
-  if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
+  const modifier = event.metaKey || event.ctrlKey
+  if (modifier && event.key.toLowerCase() === 'k') {
     event.preventDefault()
     paletteOpen.value = !paletteOpen.value
+    return
+  }
+  if (event.key === 'Escape' && sidebarOpen.value) {
+    sidebarOpen.value = false
+    return
+  }
+  if (isTyping(event.target)) return
+
+  if (event.key === '?') {
+    event.preventDefault()
+    shortcutsOpen.value = true
+    return
+  }
+
+  if (
+    !modifier &&
+    !event.altKey &&
+    event.key.toLowerCase() === 'n' &&
+    !document.querySelector('[role="dialog"]')
+  ) {
+    event.preventDefault()
+    window.dispatchEvent(new CustomEvent(NEW_SHORTCUT_EVENT))
   }
 }
 
@@ -79,12 +117,15 @@ async function handleLogout() {
 
 <template>
   <div class="flex min-h-full">
+    <a href="#contenido" class="skip-link">Saltar al contenido</a>
+
     <!-- Sidebar -->
     <aside
-      class="fixed inset-y-0 left-0 z-30 w-64 transform border-r border-slate-200 bg-white transition-transform duration-200 dark:border-slate-800 dark:bg-slate-900 lg:static lg:translate-x-0"
+      id="sidebar"
+      class="fixed inset-y-0 left-0 z-30 flex w-64 transform flex-col border-r border-slate-200 bg-white transition-transform duration-200 lg:sticky lg:inset-y-auto lg:top-0 lg:h-screen lg:translate-x-0 dark:border-slate-800 dark:bg-slate-900"
       :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'"
     >
-      <div class="flex h-16 items-center justify-between px-5">
+      <div class="flex h-16 shrink-0 items-center justify-between px-5">
         <RouterLink :to="{ name: 'dashboard' }" class="flex items-center gap-2.5">
           <div
             class="grid size-8 place-items-center rounded-lg bg-brand-600 text-sm font-bold text-white"
@@ -102,7 +143,7 @@ async function handleLogout() {
         </button>
       </div>
 
-      <nav class="space-y-1 px-3 py-2">
+      <nav class="flex-1 space-y-1 overflow-y-auto px-3 py-2" aria-label="Navegación principal">
         <RouterLink
           v-for="item in navigation"
           :key="item.name"
@@ -116,7 +157,14 @@ async function handleLogout() {
         </RouterLink>
       </nav>
 
-      <div class="absolute inset-x-0 bottom-0 border-t border-slate-200 p-3 dark:border-slate-800">
+      <div class="shrink-0 border-t border-slate-200 p-3 dark:border-slate-800">
+        <button
+          class="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
+          @click="shortcutsOpen = true"
+        >
+          <Keyboard class="size-4.5" />
+          Atajos de teclado
+        </button>
         <button
           class="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
           @click="handleLogout"
@@ -141,13 +189,15 @@ async function handleLogout() {
         <button
           class="btn-ghost size-9 p-0 lg:hidden"
           aria-label="Abrir menú"
+          aria-controls="sidebar"
+          :aria-expanded="sidebarOpen"
           @click="sidebarOpen = true"
         >
           <Menu class="size-5" />
         </button>
 
         <button
-          class="hidden w-full max-w-md items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-left text-sm text-slate-400 transition hover:border-brand-400 sm:flex dark:border-slate-700 dark:bg-slate-900"
+          class="hidden w-full max-w-md items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-left text-sm text-slate-500 transition hover:border-brand-400 sm:flex dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400"
           @click="paletteOpen = true"
         >
           <Search class="size-4 shrink-0" />
@@ -160,6 +210,13 @@ async function handleLogout() {
         </button>
 
         <div class="ml-auto flex items-center gap-2">
+          <button
+            class="btn-ghost size-9 p-0 sm:hidden"
+            aria-label="Buscar"
+            @click="paletteOpen = true"
+          >
+            <Search class="size-5" />
+          </button>
           <button
             class="btn-ghost size-9 p-0"
             :aria-label="`Cambiar tema (actual: ${themeLabel})`"
@@ -182,12 +239,13 @@ async function handleLogout() {
         </div>
       </header>
 
-      <main class="flex-1 px-4 py-6 sm:px-6 lg:px-8">
+      <main id="contenido" tabindex="-1" class="flex-1 px-4 py-6 outline-none sm:px-6 lg:px-8">
         <RouterView />
       </main>
     </div>
 
     <Toaster />
     <CommandPalette :open="paletteOpen" @close="paletteOpen = false" />
+    <ShortcutsModal :open="shortcutsOpen" @close="shortcutsOpen = false" />
   </div>
 </template>

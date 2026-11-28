@@ -80,7 +80,7 @@ function pending(summary: { totalWeightPending: number }): string {
             </div>
             <p class="shrink-0 text-2xl font-semibold tracking-tight">
               {{ average(summary) }}
-              <span class="text-xs font-normal text-slate-400">/ 20</span>
+              <span class="text-xs font-normal text-slate-500 dark:text-slate-400">/ 20</span>
             </p>
           </div>
 
@@ -90,7 +90,7 @@ function pending(summary: { totalWeightPending: number }): string {
 
           <p
             v-if="!summary.weightsValid && summary.totalWeight > 0"
-            class="text-xs font-medium text-amber-600 dark:text-amber-400"
+            class="text-xs font-medium text-amber-700 dark:text-amber-400"
           >
             Los pesos suman {{ Number(summary.totalWeight.toFixed(2)) }}%.
           </p>

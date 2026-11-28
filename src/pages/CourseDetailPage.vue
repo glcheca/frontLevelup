@@ -8,6 +8,7 @@ import { eventsApi } from '@/api/events'
 import { invalidateTasks, keys } from '@/api/keys'
 import { tasksApi } from '@/api/tasks'
 import { useToast } from '@/composables/useToast'
+import { useNewShortcut } from '@/composables/useNewShortcut'
 import type { CalendarEvent, TaskItem } from '@/types/models'
 import { formatDateTime } from '@/utils/dates'
 import ScheduleEditor from '@/components/courses/ScheduleEditor.vue'
@@ -16,6 +17,7 @@ import GradesPanel from '@/components/grades/GradesPanel.vue'
 import NotesPanel from '@/components/notes/NotesPanel.vue'
 import TaskFormModal from '@/components/tasks/TaskFormModal.vue'
 import TaskRow from '@/components/tasks/TaskRow.vue'
+import AppModal from '@/components/ui/AppModal.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import SkeletonBlock from '@/components/ui/SkeletonBlock.vue'
 
@@ -71,6 +73,8 @@ const eventFormOpen = ref(false)
 const editingEvent = ref<CalendarEvent | null>(null)
 const taskFormOpen = ref(false)
 const editingTask = ref<TaskItem | null>(null)
+const pendingDeleteEvent = ref<CalendarEvent | null>(null)
+const pendingDeleteTask = ref<TaskItem | null>(null)
 
 const completeMutation = useMutation({
   mutationFn: ({ task, done }: { task: TaskItem; done: boolean }) =>
@@ -96,6 +100,7 @@ const completeMutation = useMutation({
 const deleteTaskMutation = useMutation({
   mutationFn: (taskId: string) => tasksApi.remove(taskId),
   onSuccess: async () => {
+    pendingDeleteTask.value = null
     await invalidateTasks(queryClient)
     toast.success('Tarea eliminada.')
   },
@@ -105,6 +110,7 @@ const deleteTaskMutation = useMutation({
 const deleteEventMutation = useMutation({
   mutationFn: (eventId: string) => eventsApi.remove(eventId),
   onSuccess: async () => {
+    pendingDeleteEvent.value = null
     await queryClient.invalidateQueries({ queryKey: ['events'] })
     toast.success('Evento eliminado.')
   },
@@ -120,6 +126,22 @@ const tabs = [
 ] as const
 
 const courses = computed(() => (courseQuery.data.value ? [courseQuery.data.value] : []))
+
+useNewShortcut(() => {
+  if (tab.value === 'events') {
+    editingEvent.value = null
+    eventFormOpen.value = true
+  } else if (tab.value === 'tasks') {
+    editingTask.value = null
+    taskFormOpen.value = true
+  } else if (tab.value === 'notes' || tab.value === 'grades') {
+    return
+  } else {
+    tab.value = 'tasks'
+    editingTask.value = null
+    taskFormOpen.value = true
+  }
+})
 </script>
 
 <template>
@@ -133,8 +155,16 @@ const courses = computed(() => (courseQuery.data.value ? [courseQuery.data.value
       <SkeletonBlock :lines="3" />
     </div>
 
+    <div v-else-if="courseQuery.isError.value" class="card text-sm text-rose-600">
+      No se pudo cargar el curso.
+      <button class="btn-ghost mt-2" @click="courseQuery.refetch()">Reintentar</button>
+    </div>
+
     <div v-else-if="!courseQuery.data.value" class="card text-sm text-rose-600">
       No se encontró el curso.
+      <button class="btn-ghost mt-2" @click="router.push({ name: 'courses' })">
+        Volver a cursos
+      </button>
     </div>
 
     <template v-else>
@@ -223,7 +253,7 @@ const courses = computed(() => (courseQuery.data.value ? [courseQuery.data.value
               <button
                 class="btn-ghost size-8 p-0 text-rose-600"
                 aria-label="Borrar evento"
-                @click="deleteEventMutation.mutate(event.id)"
+                @click="pendingDeleteEvent = event"
               >
                 Borrar
               </button>
@@ -246,7 +276,7 @@ const courses = computed(() => (courseQuery.data.value ? [courseQuery.data.value
             :task="task"
             @complete="(done) => completeMutation.mutate({ task, done })"
             @edit="((editingTask = task), (taskFormOpen = true))"
-            @remove="deleteTaskMutation.mutate(task.id)"
+            @remove="pendingDeleteTask = task"
           />
         </ul>
       </section>
@@ -272,5 +302,45 @@ const courses = computed(() => (courseQuery.data.value ? [courseQuery.data.value
       :courses="courses"
       @close="((eventFormOpen = false), (editingEvent = null))"
     />
+
+    <AppModal
+      :open="Boolean(pendingDeleteEvent)"
+      title="Borrar evento"
+      @close="pendingDeleteEvent = null"
+    >
+      <p class="text-sm text-slate-600 dark:text-slate-300">
+        “{{ pendingDeleteEvent?.title }}” se borrará junto con su recordatorio pendiente.
+      </p>
+      <div class="mt-4 flex justify-end gap-2">
+        <button class="btn-ghost" @click="pendingDeleteEvent = null">Cancelar</button>
+        <button
+          class="btn-primary bg-rose-600 hover:bg-rose-700"
+          :disabled="deleteEventMutation.isPending.value"
+          @click="pendingDeleteEvent && deleteEventMutation.mutate(pendingDeleteEvent.id)"
+        >
+          Borrar evento
+        </button>
+      </div>
+    </AppModal>
+
+    <AppModal
+      :open="Boolean(pendingDeleteTask)"
+      title="Borrar tarea"
+      @close="pendingDeleteTask = null"
+    >
+      <p class="text-sm text-slate-600 dark:text-slate-300">
+        “{{ pendingDeleteTask?.title }}” se borrará junto con su recordatorio pendiente.
+      </p>
+      <div class="mt-4 flex justify-end gap-2">
+        <button class="btn-ghost" @click="pendingDeleteTask = null">Cancelar</button>
+        <button
+          class="btn-primary bg-rose-600 hover:bg-rose-700"
+          :disabled="deleteTaskMutation.isPending.value"
+          @click="pendingDeleteTask && deleteTaskMutation.mutate(pendingDeleteTask.id)"
+        >
+          Borrar tarea
+        </button>
+      </div>
+    </AppModal>
   </div>
 </template>

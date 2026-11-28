@@ -6,6 +6,7 @@ import { coursesApi } from '@/api/courses'
 import { invalidateNotes, keys } from '@/api/keys'
 import { notesApi } from '@/api/notes'
 import { useToast } from '@/composables/useToast'
+import { useNewShortcut } from '@/composables/useNewShortcut'
 import AppModal from '@/components/ui/AppModal.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import SkeletonBlock from '@/components/ui/SkeletonBlock.vue'
@@ -179,6 +180,10 @@ function setTag(tag: string) {
 function confirmDelete(note: { id: string; title: string }) {
   pendingDelete.value = note
 }
+
+useNewShortcut(() => {
+  if (!createMutation.isPending.value) createMutation.mutate()
+})
 </script>
 
 <template>
@@ -240,7 +245,9 @@ function confirmDelete(note: { id: string; title: string }) {
         <div class="flex items-center justify-between gap-2 border-b px-4 py-3">
           <p class="text-sm font-medium">
             {{ notes.length }} apunte(s)
-            <span v-if="debouncedQuery" class="text-slate-400">· “{{ debouncedQuery }}”</span>
+            <span v-if="debouncedQuery" class="text-slate-500 dark:text-slate-400">
+              · “{{ debouncedQuery }}”</span
+            >
           </p>
           <button
             v-if="embedded"
@@ -293,7 +300,9 @@ function confirmDelete(note: { id: string; title: string }) {
               >
                 <HighlightText :text="note.excerpt" :query="debouncedQuery" />
               </span>
-              <span class="flex flex-wrap items-center gap-1.5 pt-0.5 text-xs text-slate-400">
+              <span
+                class="flex flex-wrap items-center gap-1.5 pt-0.5 text-xs text-slate-500 dark:text-slate-400"
+              >
                 <span
                   v-if="note.courseName"
                   class="inline-flex items-center gap-1 text-slate-500 dark:text-slate-400"
@@ -304,7 +313,11 @@ function confirmDelete(note: { id: string; title: string }) {
                   />
                   {{ note.courseName }}
                 </span>
-                <span v-for="item in note.tags" :key="item" class="text-slate-400">
+                <span
+                  v-for="item in note.tags"
+                  :key="item"
+                  class="text-slate-500 dark:text-slate-400"
+                >
                   #{{ item }}
                 </span>
               </span>

@@ -5,6 +5,7 @@ import { CalendarDays, ChevronLeft, ChevronRight, Plus } from 'lucide-vue-next'
 import { coursesApi } from '@/api/courses'
 import { eventsApi } from '@/api/events'
 import { keys } from '@/api/keys'
+import { useNewShortcut } from '@/composables/useNewShortcut'
 import type { CalendarEvent, ClassBlock } from '@/types/models'
 import {
   addDays,
@@ -114,6 +115,8 @@ function typeColor(event: CalendarEvent) {
     event.type
   ]
 }
+
+useNewShortcut(() => openCreate(new Date()))
 </script>
 
 <template>
@@ -158,6 +161,24 @@ function typeColor(event: CalendarEvent) {
       </div>
     </header>
 
+    <div
+      v-if="eventsQuery.isError.value || scheduleQuery.isError.value"
+      class="card flex flex-wrap items-center justify-between gap-3 border-amber-300 text-sm dark:border-amber-800"
+    >
+      <span class="text-slate-700 dark:text-slate-200">No se pudo cargar el calendario.</span>
+      <button
+        class="btn-ghost"
+        @click="
+          () => {
+            void eventsQuery.refetch()
+            void scheduleQuery.refetch()
+          }
+        "
+      >
+        Reintentar
+      </button>
+    </div>
+
     <!-- Vista semanal -->
     <div v-if="view === 'week'" class="grid gap-3 overflow-x-auto md:grid-cols-7">
       <section
@@ -195,7 +216,7 @@ function typeColor(event: CalendarEvent) {
         </ul>
 
         <button
-          class="w-full rounded-md border border-dashed border-slate-200 py-1 text-xs text-slate-400 transition hover:border-brand-400 hover:text-brand-600 dark:border-slate-700"
+          class="w-full rounded-md border border-dashed border-slate-200 py-1 text-xs text-slate-500 transition hover:border-brand-400 hover:text-brand-600 dark:border-slate-700 dark:text-slate-400"
           @click="openCreate(day)"
         >
           +
@@ -249,7 +270,7 @@ function typeColor(event: CalendarEvent) {
                 </li>
                 <li
                   v-if="blocksFor(day).length + eventsFor(day).length > 4"
-                  class="text-[11px] text-slate-400"
+                  class="text-[11px] text-slate-500 dark:text-slate-400"
                 >
                   +{{ blocksFor(day).length + eventsFor(day).length - 4 }} más
                 </li>

@@ -7,10 +7,12 @@ import { coursesApi } from '@/api/courses'
 import { keys } from '@/api/keys'
 import { tasksApi } from '@/api/tasks'
 import { useToast } from '@/composables/useToast'
+import { useNewShortcut } from '@/composables/useNewShortcut'
 import type { PageResponse, TaskItem } from '@/types/models'
 import { addDays, dayKey, endOfDay } from '@/utils/dates'
 import TaskFormModal from '@/components/tasks/TaskFormModal.vue'
 import TaskRow from '@/components/tasks/TaskRow.vue'
+import AppModal from '@/components/ui/AppModal.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import SkeletonBlock from '@/components/ui/SkeletonBlock.vue'
 
@@ -26,6 +28,7 @@ const priorityFilter = ref<'all' | '0' | '1' | '2'>('all')
 
 const formOpen = ref(false)
 const editing = ref<TaskItem | null>(null)
+const pendingDelete = ref<TaskItem | null>(null)
 
 onMounted(() => {
   if (route.query.new === '1') {
@@ -130,10 +133,16 @@ const completeMutation = useMutation({
 const deleteMutation = useMutation({
   mutationFn: (taskId: string) => tasksApi.remove(taskId),
   onSuccess: async () => {
+    pendingDelete.value = null
     await queryClient.invalidateQueries({ queryKey: ['tasks'] })
     toast.success('Tarea eliminada.')
   },
   onError: (error) => toast.error(error, 'No se pudo eliminar la tarea.'),
+})
+
+useNewShortcut(() => {
+  editing.value = null
+  formOpen.value = true
 })
 </script>
 
@@ -214,7 +223,7 @@ const deleteMutation = useMutation({
           :busy="completeMutation.isPending.value"
           @complete="(done) => completeMutation.mutate({ task, done })"
           @edit="((editing = task), (formOpen = true))"
-          @remove="deleteMutation.mutate(task.id)"
+          @remove="pendingDelete = task"
         />
       </ul>
     </section>
@@ -225,5 +234,21 @@ const deleteMutation = useMutation({
       :courses="courses"
       @close="((formOpen = false), (editing = null))"
     />
+
+    <AppModal :open="Boolean(pendingDelete)" title="Borrar tarea" @close="pendingDelete = null">
+      <p class="text-sm text-slate-600 dark:text-slate-300">
+        “{{ pendingDelete?.title }}” se borrará junto con su recordatorio pendiente.
+      </p>
+      <div class="mt-4 flex justify-end gap-2">
+        <button class="btn-ghost" @click="pendingDelete = null">Cancelar</button>
+        <button
+          class="btn-primary bg-rose-600 hover:bg-rose-700"
+          :disabled="deleteMutation.isPending.value"
+          @click="pendingDelete && deleteMutation.mutate(pendingDelete.id)"
+        >
+          Borrar tarea
+        </button>
+      </div>
+    </AppModal>
   </div>
 </template>

@@ -132,7 +132,7 @@ async function openNotification(notification: AppNotification) {
                 <span v-if="notification.body" class="mt-0.5 block truncate text-xs text-slate-500">
                   {{ notification.body }}
                 </span>
-                <span class="mt-0.5 block text-xs text-slate-400">
+                <span class="mt-0.5 block text-xs text-slate-500 dark:text-slate-400">
                   {{ formatDayShort(notification.createdAt) }} ·
                   {{ formatTime(notification.createdAt) }}
                 </span>

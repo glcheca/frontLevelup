@@ -18,6 +18,8 @@
     <div class="w-full max-w-md">
       <slot />
     </div>
-    <p class="mt-8 text-xs text-slate-400">LevelUp · {{ new Date().getFullYear() }}</p>
+    <p class="mt-8 text-xs text-slate-500 dark:text-slate-400">
+      LevelUp · {{ new Date().getFullYear() }}
+    </p>
   </div>
 </template>
